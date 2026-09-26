@@ -1,0 +1,17 @@
+﻿{
+    "actors":  [
+                   {
+                       "entity_types":  [
+                                            "minecraft:sheep"
+                                        ],
+                       "actor_tags":  [
+
+                                      ]
+                   }
+               ],
+    "stages":  [
+                   {
+                       "stage":  1
+                   }
+               ]
+}

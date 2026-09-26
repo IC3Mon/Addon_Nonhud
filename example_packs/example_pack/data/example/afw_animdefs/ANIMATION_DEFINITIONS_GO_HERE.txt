@@ -1,0 +1,6 @@
+Place AFW animation definition JSON files here.
+
+The data namespace and file path form the animation ID. For example,
+data/example/afw_animdefs/wolfmplayer.json defines example:wolfmplayer.
+
+Definitions loaded from this pack check this pack's local model root first.

@@ -1,0 +1,17 @@
+﻿{
+    "actors":  [
+                   {
+                       "entity_types":  [
+                                            "minecraft:silverfish"
+                                        ],
+                       "actor_tags":  [
+
+                                      ]
+                   }
+               ],
+    "stages":  [
+                   {
+                       "stage":  1
+                   }
+               ]
+}

@@ -1,0 +1,16 @@
+{
+  "actors": [
+    {
+      "entity_types": [
+        "minecraft:slime"
+      ],
+      "entity_variant": "size_1",
+      "actor_tags": []
+    }
+  ],
+  "stages": [
+    {
+      "stage": 1
+    }
+  ]
+}

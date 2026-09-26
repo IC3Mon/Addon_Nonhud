@@ -1,0 +1,59 @@
+plugins {
+    id 'fabric-loom' version '1.17.21'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    // 仅编译期本地 jar（NoN），通过 compileOnly files() 引用，无需额外仓库
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+    // NoN（NeedsofNature 1.5.1 for 1.21.11）：编译期引用 com.nonid.*，运行时由 mods 目录提供。
+    // 见 libs/ 目录中的 jar（从 Mods/needsofnature-1.5.1+1.21.11.jar 复制而来）。
+    // 必须用 modCompileOnly（Loom 会把 jar 的 intermediary 名重映射为 yarn），裸 compileOnly files()
+    // 不重映射，编译期 com.nonid 方法里的 net.minecraft.class_XXXX 与 yarn 类对不上。
+    modCompileOnly files("libs/needsofnature-1.5.1+1.21.11.jar")
+
+    // 开发运行（gradlew runClient/runServer）：把 Mods 文件夹里的前置 mod 挂到 dev 运行 classpath。
+    // 生产运行时游戏直接从 Mods/ 加载，此处仅用于 dev 运行，不打包进 addon jar。
+    modLocalRuntime files("../Mods/needsofnature-1.5.1+1.21.11.jar")
+    modLocalRuntime files("../Mods/geckolib-fabric-1.21.11-5.4.5.jar")
+
+    // 模块验收：JUnit 5 单元测试（scan/ 工具层为纯 Java，不依赖 MC 运行时）
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": inputs.properties.version
+    }
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+
+    // 骨架中的生成/占位代码允许使用过时 API，编译期抑制警告
+    it.options.release = 21
+}
+
+test {
+    useJUnitPlatform()
+}

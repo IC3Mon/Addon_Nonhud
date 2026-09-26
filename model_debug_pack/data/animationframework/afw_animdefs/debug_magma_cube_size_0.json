@@ -1,0 +1,16 @@
+{
+  "actors": [
+    {
+      "entity_types": [
+        "minecraft:magma_cube"
+      ],
+      "entity_variant": "size_0",
+      "actor_tags": []
+    }
+  ],
+  "stages": [
+    {
+      "stage": 1
+    }
+  ]
+}

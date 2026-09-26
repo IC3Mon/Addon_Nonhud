@@ -1,0 +1,9 @@
+Place this pack's optional local AFW GeckoLib .geo.json entity models here.
+
+This exact path comes from animationframework.id example:example_pack. If the
+ID changes to creator:my_pack, move this folder to:
+assets/creator/geckolib/models/my_pack/entity/
+
+Supply only model variants that intentionally differ from shared resources.
+Missing variants continue through matching model_imports and then the shared
+animationframework model root.

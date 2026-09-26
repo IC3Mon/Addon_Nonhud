@@ -1,0 +1,17 @@
+﻿{
+    "actors":  [
+                   {
+                       "entity_types":  [
+                                            "minecraft:piglin_brute"
+                                        ],
+                       "actor_tags":  [
+
+                                      ]
+                   }
+               ],
+    "stages":  [
+                   {
+                       "stage":  1
+                   }
+               ]
+}

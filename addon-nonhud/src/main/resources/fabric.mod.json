@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "nonhud",
+  "version": "${version}",
+  "name": "NoN HUD Image Addon",
+  "description": "播放 NeedsOfNature 动画时，按动画ID+阶段在 HUD 弹图。",
+  "authors": ["you"],
+  "license": "MIT",
+  "icon": "assets/nonhud/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.example.nonhud.NoNHudAddon"],
+    "client": ["com.example.nonhud.client.NoNHudClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.2",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*",
+    "needsofnature": ">=1.5.1"
+  }
+}

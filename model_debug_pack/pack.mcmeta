@@ -1,0 +1,12 @@
+﻿{
+    "pack":  {
+                 "pack_format":  64,
+                 "supported_formats":  [
+                                           64,
+                                           81
+                                       ],
+                 "min_format":  64,
+                 "max_format":  81,
+                 "description":  "NeedsOfNature model debug pack"
+             }
+}

@@ -1,0 +1,17 @@
+﻿{
+    "actors":  [
+                   {
+                       "entity_types":  [
+                                            "minecraft:evoker"
+                                        ],
+                       "actor_tags":  [
+
+                                      ]
+                   }
+               ],
+    "stages":  [
+                   {
+                       "stage":  1
+                   }
+               ]
+}

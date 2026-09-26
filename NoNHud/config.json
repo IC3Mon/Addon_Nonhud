@@ -1,0 +1,42 @@
+{
+  "version": "0.4.2",
+  "fps": 2,
+  "birth": { "enabled": true, "dir": "pregnant/birth", "singleShot": true },
+  "slotsEnabled": {
+    "A": true,
+    "V": true,
+    "M": true,
+    "botle": true,
+    "Vfull": true,
+    "Afull": true,
+    "pregnant": true,
+    "fxxkme": true
+  },
+  "pauseKey": "",
+  "zOrder": ["fxxkme", "pregnant", "Afull", "Vfull", "botle", "M", "V", "A"],
+  "cache": { "refreshInterval": 2000 },
+  "moveMode": {
+    "A": { "type": "fixed" },
+    "V": { "type": "direction", "dx": 0, "dy": -8 },
+    "M": { "type": "random" },
+    "botle": { "type": "fixed" },
+    "Vfull": { "type": "fixed" },
+    "Afull": { "type": "fixed" },
+    "pregnant": { "type": "fixed" },
+    "fxxkme": { "type": "fixed" }
+  },
+  "region": {},
+  "effect": {
+    "fadeInMs": 300,
+    "fadeOutMs": 300,
+    "scaleMode": "fit"
+  },
+  "thresholds": {
+    "energy": [50, 100, 150],
+    "vtank": [30, 60, 100],
+    "atank": [30, 60, 100],
+    "pregnancy": [85, 170, 255]
+  },
+  "imagePicker": {},
+  "keybind": ""
+}

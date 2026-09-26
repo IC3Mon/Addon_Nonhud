@@ -1,0 +1,17 @@
+﻿{
+    "actors":  [
+                   {
+                       "entity_types":  [
+                                            "minecraft:breeze"
+                                        ],
+                       "actor_tags":  [
+
+                                      ]
+                   }
+               ],
+    "stages":  [
+                   {
+                       "stage":  1
+                   }
+               ]
+}

@@ -1,0 +1,18 @@
+# ===== Gradle / IDE =====
+.gradle/
+build/
+.idea/
+*.iml
+.vscode/
+
+# ===== 游戏运行期本地产物（不入库）=====
+addon-nonhud/run/
+addon-nonhud/logs/
+
+# ===== 第三方运行时 mod（从发布渠道获取，不入库）=====
+Mods/
+
+# ===== 临时 / 崩溃 / 杂项 =====
+Temp/
+hs_err_pid*.log
+新文件1.txt

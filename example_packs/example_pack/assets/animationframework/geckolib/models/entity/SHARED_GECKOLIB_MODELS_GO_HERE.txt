@@ -1,0 +1,9 @@
+Optional: place intentional shared AFW GeckoLib .geo.json overrides here.
+
+Examples include wolf.m.geo.json, wolf.f.geo.json, wolf.mf.geo.json,
+player.m.geo.json, player.f.geo.json, and player.mf.geo.json. Normal
+resource-pack priority chooses one shared model, so a model placed here can
+affect every animation that reaches shared-model fallback.
+
+Prefer the ID-derived local model folder for geometry specific to this pack.
+Delete this folder if the pack should only reuse existing shared models.

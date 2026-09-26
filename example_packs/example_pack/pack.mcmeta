@@ -1,0 +1,17 @@
+{
+  "pack": {
+    "pack_format": 64,
+    "supported_formats": [64, 81],
+    "min_format": 64,
+    "max_format": 81,
+    "description": "Minimal NoN pack structure example"
+  },
+  "animationframework": {
+    "id": "example:example_pack",
+    "default_model_revision": 1,
+    "name": "NoN Pack Example",
+    "author": "Replace Me",
+    "version": "1.0.0",
+    "description": "Template for animations and optional local or shared models."
+  }
+}

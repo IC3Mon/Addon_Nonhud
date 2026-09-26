@@ -1,0 +1,4 @@
+Place conjoined GeckoLib animation JSON files here.
+
+Use <animation_id>.animation.json. Each file contains all stages and actors for
+that animation, using keys such as p1_wolf and p1_player.

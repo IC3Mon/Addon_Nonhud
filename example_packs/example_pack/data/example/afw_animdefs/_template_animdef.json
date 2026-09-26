@@ -1,0 +1,62 @@
+{
+  "display_name": "Wolf Encounter",
+  "animators": ["Animator One", "Animator Two"],
+  "actors": [
+    {
+      "label": "wolf",
+      "entity_types": ["minecraft:wolf"],
+      "actor_tags": ["optional.required.tag"],
+      "actor_tags_any": ["optional.one", "optional.two"],
+      "activity": "active",
+      "injector": "V",
+      "receiver": false
+    },
+    {
+      "label": "player",
+      "entity_types": ["minecraft:player"],
+      "activity": "passive",
+      "receiver": true,
+      "prop_floor": "minecraft:lantern"
+    }
+  ],
+  "weight": 1.0,
+  "attack_eligible": true,
+  "system_tags": ["normal_match"],
+  "content_tags": ["doggy"],
+  "join_after": ["creator:wolfmplayer"],
+  "match_content_on_join": false,
+  "required_union_tags": ["some.tag"],
+  "speed": 1.0,
+  "water": "none",
+  "position_anchor_actor": "player",
+  "camera": {
+    "torso_tracking": "adaptive",
+    "block_requirement_collision": "normal"
+  },
+  "liquid_gain_multiplier": 1.0,
+  "escapable": true,
+  "stage_seconds": 10,
+  "stages": [
+    {
+      "stage": 1,
+      "loop": true,
+      "cycle_seconds": 1.2,
+      "allow_join": true,
+      "speed": 1.0,
+      "escapable": true,
+      "stage_seconds": 8,
+      "stage_duration_multiplier": 1.0
+    },
+    {
+      "stage": 2,
+      "use_stage": 1,
+      "loop": true,
+      "cycle_seconds": 0.8,
+      "allow_join": false,
+      "non_peak": true,
+      "escapable": false,
+      "stage_seconds": 6,
+      "stage_duration_multiplier": 0.5
+    }
+  ]
+}

@@ -22,7 +22,14 @@ public final class SlotRenderer {
      */
     public static void draw(DrawContext context, SlotRenderState state,
                             net.minecraft.util.Identifier texId, int imgW, int imgH) {
-        SlotRenderState.Draw d = state.draw(imgW, imgH);
+        draw(context, texId, state.draw(imgW, imgH), imgW, imgH);
+    }
+
+    /**
+     * 用预计算好的绘制矩形直接绘制（模块 5.1：组内重叠错开后，按错开后的位置画）。
+     */
+    public static void draw(DrawContext context, net.minecraft.util.Identifier texId,
+                            SlotRenderState.Draw d, int imgW, int imgH) {
         if (!d.visible() || d.width() <= 0 || d.height() <= 0) {
             return;
         }

@@ -89,6 +89,7 @@ public final class ConfigManager {
         RenderDefaults.setScaleMode(c.scaleMode);
         RenderDefaults.setScalePercent(c.scalePercent);
         RenderDefaults.setNumericDisplayMs(c.numericDurationMs);
+        RenderDefaults.setGroups(c.groups);
         for (Map.Entry<Slot, com.example.nonhud.render.Region> e : c.regions.entrySet()) {
             RenderDefaults.setRegion(e.getKey(), e.getValue());
         }
@@ -98,6 +99,8 @@ public final class ConfigManager {
         NumericMonitor.setThresholds(c.energyThresholds, c.vTankThresholds,
                 c.aTankThresholds, c.pregnancyThresholds);
         NumericMonitor.setDisplayDurationMs(c.numericDurationMs);
+        NumericMonitor.setFxxkmeParams(c.fxxkmeEnergyThreshold, c.fxxkmeIntervalMinSec, c.fxxkmeIntervalMaxSec);
+        com.example.nonhud.engine.EventSlotListener.setFillBottleAnimId(c.fillBottleAnimId);
         // 槽位开关 → 重建索引（O4/O1）
         NoNHudRuntime.reload(c.slotsEnabled);
     }

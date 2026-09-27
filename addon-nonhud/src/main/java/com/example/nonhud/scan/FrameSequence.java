@@ -85,6 +85,22 @@ public final class FrameSequence {
         }
     }
 
+    /**
+     * 按帧数推进（模块 5.1 组播放速度：fps 按组独立设置，直接按「帧/秒 × 秒」推进）。
+     * 单图模式（single）或仅一帧时不推进；不足一帧的余数跨帧累积。
+     */
+    public void advanceByFrames(double framesToAdvance) {
+        if (single || frames.size() <= 1) {
+            return;
+        }
+        carry += framesToAdvance;
+        long steps = (long) Math.floor(carry);
+        if (steps > 0) {
+            current = (int) ((current + steps) % frames.size());
+            carry -= steps;
+        }
+    }
+
     /** 回到首帧（进入阶段随机选中本序列后调用）。 */
     public void reset() {
         current = 0;

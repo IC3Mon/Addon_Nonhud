@@ -1,5 +1,6 @@
 package com.example.nonhud.config;
 
+import com.example.nonhud.render.Group;
 import com.example.nonhud.render.MoveMode;
 import com.example.nonhud.render.Region;
 import com.example.nonhud.render.ScaleMode;
@@ -96,12 +97,45 @@ public final class ConfigCodec {
         }
         root.add("moveModes", moves);
 
+        JsonArray groupArr = new JsonArray();
+        for (com.example.nonhud.render.Group g : cfg.groups) {
+            JsonObject o = new JsonObject();
+            o.addProperty("id", g.id());
+            JsonArray slots = new JsonArray();
+            for (Slot s : g.slots()) {
+                slots.add(s.name().toLowerCase(Locale.ROOT));
+            }
+            o.add("slots", slots);
+            JsonObject area = new JsonObject();
+            area.addProperty("x", g.area().x());
+            area.addProperty("y", g.area().y());
+            area.addProperty("width", g.area().width());
+            area.addProperty("height", g.area().height());
+            o.add("area", area);
+            o.addProperty("fps", g.fps());
+            o.addProperty("fadeInMs", g.fadeInMs());
+            o.addProperty("fadeOutMs", g.fadeOutMs());
+            o.addProperty("overlapEnabled", g.overlapEnabled());
+            o.addProperty("overlapPercent", g.overlapPercent());
+            o.addProperty("layer", g.layer().name().toLowerCase(Locale.ROOT));
+            groupArr.add(o);
+        }
+        root.add("groups", groupArr);
+
         JsonObject thresholds = new JsonObject();
         thresholds.add("energy", ints(cfg.energyThresholds));
         thresholds.add("vTank", ints(cfg.vTankThresholds));
         thresholds.add("aTank", ints(cfg.aTankThresholds));
         thresholds.add("pregnancy", ints(cfg.pregnancyThresholds));
         root.add("thresholds", thresholds);
+
+        JsonObject fxxkme = new JsonObject();
+        fxxkme.addProperty("energyThreshold", cfg.fxxkmeEnergyThreshold);
+        fxxkme.addProperty("intervalMinSec", cfg.fxxkmeIntervalMinSec);
+        fxxkme.addProperty("intervalMaxSec", cfg.fxxkmeIntervalMaxSec);
+        root.add("fxxkme", fxxkme);
+
+        root.addProperty("fillBottleAnimId", cfg.fillBottleAnimId);
 
         return GSON.toJson(root);
     }
@@ -187,6 +221,51 @@ public final class ConfigCodec {
         cfg.aTankThresholds = optInts(thresholds.get("aTank"), cfg.aTankThresholds);
         cfg.pregnancyThresholds = optInts(thresholds.get("pregnancy"), cfg.pregnancyThresholds);
 
+        JsonObject fxxkme = optObj(root, "fxxkme");
+        cfg.fxxkmeEnergyThreshold = optInt(fxxkme, "energyThreshold", cfg.fxxkmeEnergyThreshold);
+        cfg.fxxkmeIntervalMinSec = optInt(fxxkme, "intervalMinSec", cfg.fxxkmeIntervalMinSec);
+        cfg.fxxkmeIntervalMaxSec = optInt(fxxkme, "intervalMaxSec", cfg.fxxkmeIntervalMaxSec);
+        cfg.fillBottleAnimId = optStr(root, "fillBottleAnimId", cfg.fillBottleAnimId);
+
+        JsonArray groupArr = root.getAsJsonArray("groups");
+        if (groupArr != null) {
+            List<com.example.nonhud.render.Group> parsed = new ArrayList<>();
+            for (JsonElement e : groupArr) {
+                JsonObject o = e.getAsJsonObject();
+                String id = optStr(o, "id", "");
+                if (id.isBlank()) {
+                    continue;
+                }
+                List<Slot> slots = new ArrayList<>();
+                JsonArray slotsArr = o.getAsJsonArray("slots");
+                if (slotsArr != null) {
+                    for (JsonElement s : slotsArr) {
+                        Slot slot = parseSlot(s.getAsString());
+                        if (slot != null && !slots.contains(slot)) {
+                            slots.add(slot);
+                        }
+                    }
+                }
+                if (slots.isEmpty()) {
+                    continue;
+                }
+                JsonObject areaObj = optObj(o, "area");
+                com.example.nonhud.render.Region area = new com.example.nonhud.render.Region(
+                        optInt(areaObj, "x", 0), optInt(areaObj, "y", 0),
+                        optInt(areaObj, "width", 150), optInt(areaObj, "height", 160));
+                parsed.add(new com.example.nonhud.render.Group(id, slots, area,
+                        optDouble(o, "fps", com.example.nonhud.render.RenderDefaults.FPS),
+                        optLong(o, "fadeInMs", com.example.nonhud.render.RenderDefaults.FADE_IN_MS),
+                        optLong(o, "fadeOutMs", com.example.nonhud.render.RenderDefaults.FADE_OUT_MS),
+                        optBool(o, "overlapEnabled", false),
+                        optInt(o, "overlapPercent", 0),
+                        parseLayer(optStr(o, "layer", "back"))));
+            }
+            if (!parsed.isEmpty()) {
+                cfg.groups = parsed;
+            }
+        }
+
         return cfg;
     }
 
@@ -228,6 +307,20 @@ public final class ConfigCodec {
         JsonElement e = o.get(key);
         return (e != null && e.isJsonPrimitive() && e.getAsJsonPrimitive().isString())
                 ? e.getAsString() : fallback;
+    }
+
+    private static boolean optBool(JsonObject o, String key, boolean fallback) {
+        JsonElement e = o.get(key);
+        return (e != null && e.isJsonPrimitive() && e.getAsJsonPrimitive().isBoolean())
+                ? e.getAsBoolean() : fallback;
+    }
+
+    private static Group.Layer parseLayer(String name) {
+        try {
+            return Group.Layer.valueOf(name.toUpperCase(Locale.ROOT));
+        } catch (RuntimeException e) {
+            return Group.Layer.BACK;
+        }
     }
 
     private static double optDouble(JsonObject o, String key, double fallback) {

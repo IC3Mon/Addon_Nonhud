@@ -30,6 +30,8 @@ public final class SlotRenderState {
     private final ScaleMode scaleMode;
     /** 图片显示大小倍率（0.1–5.0，100% = 区域 FIT/拉伸后的正常大小）。 */
     private final double scalePercent;
+    /** 所属显示组（模块 5.1）：提供 area 边界约束与组播放速度；null = 不约束、用序列自带 fps。 */
+    private final Group group;
     private final long fadeInMs;
     private final long fadeOutMs;
     private final Random random;
@@ -47,7 +49,7 @@ public final class SlotRenderState {
 
     public SlotRenderState(Slot slot, SlotKey key, FrameSequence seq, Region region,
                            MoveMode moveMode, ScaleMode scaleMode, double scalePercent,
-                           long fadeInMs, long fadeOutMs, Random random) {
+                           Group group, long fadeInMs, long fadeOutMs, Random random) {
         this.slot = Objects.requireNonNull(slot);
         this.key = Objects.requireNonNull(key);
         this.seq = Objects.requireNonNull(seq);
@@ -55,11 +57,25 @@ public final class SlotRenderState {
         this.moveMode = Objects.requireNonNull(moveMode);
         this.scaleMode = Objects.requireNonNull(scaleMode);
         this.scalePercent = Math.max(0.1, Math.min(5.0, scalePercent));
+        this.group = group;
         this.fadeInMs = Math.max(0, fadeInMs);
         this.fadeOutMs = Math.max(0, fadeOutMs);
         this.random = Objects.requireNonNull(random);
         this.active = true;
         this.alpha = 0f; // 淡入起点
+    }
+
+    /** 旧签名（无组）：不约束 area、帧速用序列自带 fps。 */
+    public SlotRenderState(Slot slot, SlotKey key, FrameSequence seq, Region region,
+                           MoveMode moveMode, ScaleMode scaleMode, double scalePercent,
+                           long fadeInMs, long fadeOutMs, Random random) {
+        this(slot, key, seq, region, moveMode, scaleMode, scalePercent,
+                null, fadeInMs, fadeOutMs, random);
+    }
+
+    /** 所属显示组（可为 null）。 */
+    public Group group() {
+        return group;
     }
 
     public Slot slot() {
@@ -107,8 +123,9 @@ public final class SlotRenderState {
             return;
         }
         timeMs += deltaMs;
-        // 渲染帧间隔折算成游戏 tick（含小数）；FrameSequence 内部 carry 跨帧累积分数步
-        seq.advanceTicks(deltaMs * 20.0 / 1000.0);
+        // 帧推进：组播放速度优先（模块 5.1），否则用序列自带 fps（每秒帧数）
+        double playFps = group != null ? group.fps() : seq.fps();
+        seq.advanceByFrames(deltaMs * playFps / 1000.0);
         if (active) {
             fadeInElapsed += deltaMs;
             alpha = fadeInMs <= 0 ? 1f : Math.min(1f, (float) fadeInElapsed / fadeInMs);
@@ -120,7 +137,8 @@ public final class SlotRenderState {
     }
 
     /**
-     * 本帧绘制矩形：按 scaleMode 在区域内等比例/拉伸，再叠加上移动偏移。
+     * 本帧绘制矩形：按 scaleMode 在区域内等比例/拉伸，再叠加上移动偏移，
+     * 最后受组 area 边界约束（超出时等比缩小并居中到 area 内，模块 5.1）。
      *
      * @param imgW 图片原始宽度（像素）
      * @param imgH 图片原始高度（像素）
@@ -145,6 +163,23 @@ public final class SlotRenderState {
         MoveMode.Offset off = moveMode.offset(random, timeMs, moveAccumMs);
         int x = region.x() + (region.width() - w) / 2 + off.x();
         int y = region.y() + (region.height() - h) / 2 + off.y();
-        return new Draw(x, y, w, h, alpha, seq.current(), alpha > 0f);
+        Draw d = new Draw(x, y, w, h, alpha, seq.current(), alpha > 0f);
+        if (group != null && group.area() != null) {
+            d = constrainToArea(group.area(), d);
+        }
+        return d;
+    }
+
+    /** 图片整体缩入组 area（等比缩小并居中），保证图片完整显示在 area 之内。 */
+    private static Draw constrainToArea(Region area, Draw d) {
+        if (d.width() <= area.width() && d.height() <= area.height()) {
+            return d;
+        }
+        double s = Math.min((double) area.width() / d.width(), (double) area.height() / d.height());
+        int w = (int) Math.max(1, Math.round(d.width() * s));
+        int h = (int) Math.max(1, Math.round(d.height() * s));
+        int x = area.x() + (area.width() - w) / 2;
+        int y = area.y() + (area.height() - h) / 2;
+        return new Draw(x, y, w, h, d.alpha(), d.framePath(), d.visible());
     }
 }

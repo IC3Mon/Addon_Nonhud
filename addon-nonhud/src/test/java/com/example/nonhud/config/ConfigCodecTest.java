@@ -1,5 +1,6 @@
 package com.example.nonhud.config;
 
+import com.example.nonhud.render.Group;
 import com.example.nonhud.render.MoveMode;
 import com.example.nonhud.render.Region;
 import com.example.nonhud.render.ScaleMode;
@@ -7,6 +8,7 @@ import com.example.nonhud.scan.Slot;
 import com.google.gson.JsonParseException;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -100,5 +102,50 @@ class ConfigCodecTest {
         assertEquals(2.0, back.fps, 1e-6); // 非法数字 → 默认
         assertEquals(ScaleMode.FIT, back.scaleMode); // 非法枚举 → 默认
         assertEquals(List.of(Slot.A), back.zOrder); // 未知槽被忽略、重复去重
+    }
+
+    @Test
+    void groupsFxxkmeAndKeysRoundTrip() {
+        Config c = new Config();
+        c.groups = new ArrayList<>(List.of(
+                new Group("g1", List.of(Slot.A, Slot.V, Slot.M),
+                        new Region(20, 30, 610, 160), 3.0, 100, 200,
+                        true, 30, Group.Layer.FRONT)));
+        c.fxxkmeEnergyThreshold = 250;
+        c.fxxkmeIntervalMinSec = 40;
+        c.fxxkmeIntervalMaxSec = 90;
+        c.fillBottleAnimId = "my_fill_bottle";
+
+        Config back = ConfigCodec.fromJson(ConfigCodec.toJson(c));
+        assertEquals(1, back.groups.size());
+        Group g = back.groups.get(0);
+        assertEquals("g1", g.id());
+        assertEquals(List.of(Slot.A, Slot.V, Slot.M), g.slots());
+        assertEquals(new Region(20, 30, 610, 160), g.area());
+        assertEquals(3.0, g.fps(), 1e-6);
+        assertEquals(100, g.fadeInMs());
+        assertEquals(200, g.fadeOutMs());
+        assertTrue(g.overlapEnabled());
+        assertEquals(30, g.overlapPercent());
+        assertEquals(Group.Layer.FRONT, g.layer());
+        assertEquals(250, back.fxxkmeEnergyThreshold);
+        assertEquals(40, back.fxxkmeIntervalMinSec);
+        assertEquals(90, back.fxxkmeIntervalMaxSec);
+        assertEquals("my_fill_bottle", back.fillBottleAnimId);
+    }
+
+    @Test
+    void emptyJsonHasDefaultGroups() {
+        Config back = ConfigCodec.fromJson("{}");
+        assertEquals(3, back.groups.size());
+        assertEquals("g1", back.groups.get(0).id());
+    }
+
+    @Test
+    void invalidGroupEntriesAreDropped() {
+        String json = "{\"groups\":[{\"id\":\"\",\"slots\":[\"A\"]},{\"id\":\"g1\",\"slots\":[],\"area\":{}}]}";
+        Config back = ConfigCodec.fromJson(json);
+        // 空 id / 空 slots 的组被丢弃 → 保留默认组
+        assertEquals(3, back.groups.size());
     }
 }

@@ -47,6 +47,13 @@ public final class EventSlotListener {
 
     private static final EnumSet<Slot> EVENT_SLOTS = EnumSet.of(Slot.A, Slot.V, Slot.M, Slot.BOTLE);
 
+    /** 触发 botle 槽的 NoN 动画 ID（模块 5.1 可配置；空 = 仅按 content_tags 判定）。 */
+    private static volatile String fillBottleAnimId = "player_fill_bottle";
+
+    public static void setFillBottleAnimId(String id) {
+        fillBottleAnimId = id == null ? "" : id;
+    }
+
     private EventSlotListener() { }
 
     public static void register() {
@@ -105,7 +112,8 @@ public final class EventSlotListener {
         }
         EventTier tier = StageTier.tierForStage(stageIndex, def.stages().size() - 1);
 
-        boolean botle = containsIgnoreCase(def.contentTags(), "botle");
+        boolean botle = containsIgnoreCase(def.contentTags(), "botle")
+                || matchesFillBottleAnimId(animId);
         boolean birth = containsIgnoreCase(def.systemTags(), "birth");
         Set<String> injectorRoles = loadInjectorRoles(world, animId);
         ChatDebug.server(requester, "[" + event + "] 动画 " + animId + " stage=" + (stageIndex + 1)
@@ -216,6 +224,19 @@ public final class EventSlotListener {
 
     private static boolean containsIgnoreCase(Collection<String> tags, String needle) {
         return tags.stream().anyMatch(t -> t.equalsIgnoreCase(needle));
+    }
+
+    /** 模块 5.1：动画 ID 匹配配置的 fillBottleAnimId（支持 "namespace:path" 或 "path" 写法；
+     * 另按不区分大小写的子串匹配，兼容命名差异，如 player_fill_bottle / player_full_bottle）。 */
+    private static boolean matchesFillBottleAnimId(Identifier animId) {
+        String id = fillBottleAnimId;
+        if (id.isBlank()) {
+            return false;
+        }
+        String path = animId.getPath();
+        String full = animId.toString();
+        return id.equals(path) || id.equals(full)
+                || path.toLowerCase(java.util.Locale.ROOT).contains(id.toLowerCase(java.util.Locale.ROOT));
     }
 
     /** NonGender → 目录性别档：MALE→male，其余（FEMALE/BOTH/NONE）→ female。 */

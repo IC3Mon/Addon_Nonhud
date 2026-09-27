@@ -9,7 +9,7 @@ import net.minecraft.text.Text;
 /**
  * 模块 5 快捷键：
  * - 暂停键（N1）：切换 HUD 全局暂停（仅隐藏绘制，状态机继续推进）；
- * - 设置键：打开设置界面（ConfigScreen）。
+ * - 设置键：打开设置界面（ConfigScreen，内含 "Edit Areas" 入口打开区域编辑）。
  * 默认键位可经 config.json "keys" 覆盖（"key.keyboard.p" / "key.keyboard.f6" 等）。
  */
 public final class ConfigKeybinds {

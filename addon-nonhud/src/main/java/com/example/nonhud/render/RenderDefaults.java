@@ -71,6 +71,43 @@ public final class RenderDefaults {
     /** 随机移动半径（像素；待定点 5 小范围）。 */
     public static final int RANDOM_DISTANCE = 4;
 
+    /** 默认显示组（模块 5.1 分组重构）：G1 事件组 / G2 数值组 / G0 其他。 */
+    public static List<Group> defaultGroups() {
+        return List.of(
+                new Group("g1", List.of(Slot.A, Slot.V, Slot.M),
+                        new Region(20, 30, 610, 160), FPS, FADE_IN_MS, FADE_OUT_MS,
+                        false, 0, Group.Layer.BACK),
+                new Group("g2", List.of(Slot.VFULL, Slot.AFULL),
+                        new Region(20, 195, 610, 160), FPS, FADE_IN_MS, FADE_OUT_MS,
+                        false, 0, Group.Layer.BACK),
+                new Group("g0", List.of(Slot.BOTLE, Slot.PREGNANT, Slot.FXXKME),
+                        new Region(230, 0, 400, 360), FPS, FADE_IN_MS, FADE_OUT_MS,
+                        false, 0, Group.Layer.BACK));
+    }
+
+    private static volatile List<Group> groups = defaultGroups();
+
+    /** 当前显示组快照（不可变）。 */
+    public static List<Group> groups() {
+        return groups;
+    }
+
+    /** 设置显示组列表（config 热重载入口；null 回退默认）。 */
+    public static void setGroups(List<Group> value) {
+        groups = value == null || value.isEmpty() ? defaultGroups() : List.copyOf(value);
+    }
+
+    /** 某槽所属的全部组（槽可多组多份显示；无组时回退默认）。 */
+    public static List<Group> groupsOf(Slot slot) {
+        List<Group> hits = new java.util.ArrayList<>();
+        for (Group g : groups) {
+            if (g.contains(slot)) {
+                hits.add(g);
+            }
+        }
+        return hits.isEmpty() ? List.of(defaultGroups().get(0)) : List.copyOf(hits);
+    }
+
     private static final Map<Slot, MoveMode> MOVE_MODES = new EnumMap<>(Slot.class);
     private static final Map<Slot, Region> REGIONS = new EnumMap<>(Slot.class);
     private static volatile List<Slot> zOrder = ZOrder.defaults();
@@ -95,10 +132,10 @@ public final class RenderDefaults {
     }
 
     static {
-        // §6 moveMode 草案默认：V 方向偏移(0,-8)，M 随机，其余固定
+        // §6 moveMode 草案默认：V 方向偏移(0,-8)，A/M 固定（无抖动，g8 验收后 M 由 random 改 fixed）
         MOVE_MODES.put(Slot.A, MoveMode.fixed());
         MOVE_MODES.put(Slot.V, MoveMode.direction(0, -8));
-        MOVE_MODES.put(Slot.M, MoveMode.random(RANDOM_DISTANCE, RANDOM_REFRESH_MS));
+        MOVE_MODES.put(Slot.M, MoveMode.fixed());
         MOVE_MODES.put(Slot.BOTLE, MoveMode.fixed());
         MOVE_MODES.put(Slot.VFULL, MoveMode.fixed());
         MOVE_MODES.put(Slot.AFULL, MoveMode.fixed());

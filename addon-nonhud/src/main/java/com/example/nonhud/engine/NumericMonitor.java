@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -37,7 +38,7 @@ import java.util.UUID;
  */
 public final class NumericMonitor {
 
-    /** 设计 §6 thresholds 默认值。 */
+    /** 设计 §6 thresholds 默认值（V槽 [30,60,100]：100% 满值 → 档位四）。 */
     static final List<Integer> ENERGY_THRESHOLDS = List.of(50, 100, 150);
     static final List<Integer> V_TANK_THRESHOLDS = List.of(30, 60, 100);
     static final List<Integer> A_TANK_THRESHOLDS = List.of(30, 60, 100);
@@ -51,6 +52,11 @@ public final class NumericMonitor {
     /** 数值槽一次性触发播放时长（毫秒；默认 3s，模块 5 配置注入；0 = 一直显示）。 */
     private static long displayDurationMs = 3000;
 
+    /** fxxkme 周期触发（模块 5.1）：energy ≥ 阈值后每随机间隔播放一次 ph3。 */
+    private static int fxxkmeEnergyThreshold = 200;
+    private static int fxxkmeIntervalMinSec = 30;
+    private static int fxxkmeIntervalMaxSec = 60;
+
     /** 模块 5 配置注入：数值槽档位阈值（空列表 = 永不触发，容错）。 */
     public static void setThresholds(List<Integer> energy, List<Integer> vTank,
                                      List<Integer> aTank, List<Integer> pregnancy) {
@@ -60,22 +66,31 @@ public final class NumericMonitor {
         pregnancyThresholds = List.copyOf(pregnancy);
     }
 
+    /** 模块 5 配置注入：fxxkme 周期触发参数（energy 阈值 + 随机间隔秒数区间）。 */
+    public static void setFxxkmeParams(int energyThreshold, int intervalMinSec, int intervalMaxSec) {
+        fxxkmeEnergyThreshold = Math.max(0, energyThreshold);
+        fxxkmeIntervalMinSec = Math.max(1, intervalMinSec);
+        fxxkmeIntervalMaxSec = Math.max(fxxkmeIntervalMinSec, intervalMaxSec);
+    }
+
     /** 模块 5 配置注入：数值槽一次性触发播放时长（毫秒；0 = 一直显示）。 */
     public static void setDisplayDurationMs(long ms) {
         displayDurationMs = Math.max(0, ms);
     }
 
     private static final Map<UUID, PlayerNumericState> STATES = new HashMap<>();
+    private static final Random RANDOM = new Random();
 
     private NumericMonitor() { }
 
     private static final class PlayerNumericState {
-        final NumericTracker energy = new NumericTracker();
         final NumericTracker tank = new NumericTracker();
         NumericTracker pregnancy = new NumericTracker();
         PregnancyProgress pregnancyProgress = new PregnancyProgress();
         Slot lastTankSlot;
         boolean wasPregnant;
+        /** fxxkme 周期触发（模块 5.1）：下一次触发 tick（0 = 未就绪）。 */
+        long fxxkmeNextTick;
         /** 数值槽显示截止 tick（一次性触发到期自动隐藏；key=槽位）。 */
         final EnumMap<Slot, Long> hideDeadlineTicks = new EnumMap<>(Slot.class);
     }
@@ -106,30 +121,35 @@ public final class NumericMonitor {
     private static void sampleEnergy(ServerPlayerEntity player, PlayerNumericState state, long nowTicks) {
         TriggerEngine engine = TriggerEngineHub.getFor(player.getUuid());
         if (!NonEntityApi.hasEnergy(player)) {
-            if (engine.isActive(Slot.FXXKME)) {
-                engine.hide(Slot.FXXKME);
-                ServerPlayNetworking.send(player, new SlotHidePayload(Slot.FXXKME.name()));
-            }
-            state.hideDeadlineTicks.remove(Slot.FXXKME);
+            hideFxxkme(player, state, engine);
             return;
         }
         int value = NonEntityApi.getEnergy(player).energy();
-        Optional<NumericTracker.Change> change = state.energy.update(value, energyThresholds);
-        if (change.isEmpty()) {
+        if (value < fxxkmeEnergyThreshold) {
+            hideFxxkme(player, state, engine);
             return;
         }
-        if (value <= 0) {
-            // 设计 §4.3：energy 归零 → 停止
-            if (engine.isActive(Slot.FXXKME)) {
-                engine.hide(Slot.FXXKME);
-                ServerPlayNetworking.send(player, new SlotHidePayload(Slot.FXXKME.name()));
-            }
-            state.hideDeadlineTicks.remove(Slot.FXXKME);
-            return;
+        // 模块 5.1：energy ≥ 阈值后周期性一次性触发 fxxkme ph3（随机间隔可配置）
+        if (state.fxxkmeNextTick == 0 || nowTicks >= state.fxxkmeNextTick) {
+            SlotKey key = SlotKey.fxxkme(3);
+            engine.show(Slot.FXXKME, key, NoNHudRuntime.index().get(key));
+            sendShown(player, state, engine, Slot.FXXKME, nowTicks);
+            int range = fxxkmeIntervalMaxSec - fxxkmeIntervalMinSec + 1;
+            int intervalSec = fxxkmeIntervalMinSec + RANDOM.nextInt(Math.max(1, range));
+            state.fxxkmeNextTick = nowTicks + intervalSec * 20L;
+            ChatDebug.server(player, "[numeric] energy≥" + fxxkmeEnergyThreshold + "，周期触发 fxxkme ph3，下次 "
+                    + intervalSec + "s 后");
         }
-        SlotKey key = SlotKey.fxxkme(change.get().ph());
-        engine.show(Slot.FXXKME, key, NoNHudRuntime.index().get(key));
-        sendShown(player, state, engine, Slot.FXXKME, nowTicks);
+    }
+
+    /** energy 未达标/无 energy：隐藏 fxxkme 并复位周期计时。 */
+    private static void hideFxxkme(ServerPlayerEntity player, PlayerNumericState state, TriggerEngine engine) {
+        if (engine.isActive(Slot.FXXKME)) {
+            engine.hide(Slot.FXXKME);
+            ServerPlayNetworking.send(player, new SlotHidePayload(Slot.FXXKME.name()));
+        }
+        state.hideDeadlineTicks.remove(Slot.FXXKME);
+        state.fxxkmeNextTick = 0;
     }
 
     private static void sampleTank(ServerPlayerEntity player, PlayerNumericState state, long nowTicks) {

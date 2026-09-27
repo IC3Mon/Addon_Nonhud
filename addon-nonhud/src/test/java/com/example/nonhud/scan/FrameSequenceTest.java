@@ -75,4 +75,38 @@ class FrameSequenceTest {
         assertThrows(IllegalArgumentException.class,
                 () -> FrameSequence.sequence("x", List.of(), 2.0));
     }
+
+    @Test
+    void advanceByFramesAdvancesByWholeFramesAndLoops() {
+        FrameSequence seq = FrameSequence.sequence("A1", List.of(f1, f2, f3), 2.0);
+        seq.advanceByFrames(1.0);
+        assertEquals(f2, seq.current());
+        seq.advanceByFrames(1.0);
+        assertEquals(f3, seq.current());
+        seq.advanceByFrames(1.0);
+        assertEquals(f1, seq.current()); // 循环
+    }
+
+    @Test
+    void advanceByFramesCarriesPartialFrames() {
+        FrameSequence seq = FrameSequence.sequence("A1", List.of(f1, f2, f3), 2.0);
+        seq.advanceByFrames(0.4); // 不足一帧
+        assertEquals(f1, seq.current());
+        seq.advanceByFrames(0.4); // 累积 0.8
+        assertEquals(f1, seq.current());
+        seq.advanceByFrames(0.4); // 累积 1.2 → 1 帧
+        assertEquals(f2, seq.current());
+    }
+
+    @Test
+    void advanceByFramesDecimalTicksCompat() {
+        FrameSequence seq = FrameSequence.sequence("A1", List.of(f1, f2, f3), 2.0);
+        // 渲染帧间隔换算：0.5 秒 × 组 fps 2 = 1 帧
+        seq.advanceByFrames(0.5 * 2.0);
+        assertEquals(f2, seq.current());
+        // 单图模式不推进
+        FrameSequence single = FrameSequence.single("myimg", f1);
+        single.advanceByFrames(5.0);
+        assertEquals(f1, single.current());
+    }
 }
